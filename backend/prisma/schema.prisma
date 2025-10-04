@@ -1,0 +1,524 @@
+// This is your Prisma schema file
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id                   String          @id @default(uuid())
+  email                String          @unique
+  username             String          @unique
+  password             String
+  phone                String          @unique
+  fplTeamId            Int?
+  isVerified           Boolean         @default(false)
+  isActive             Boolean         @default(true)
+  consentGiven         Boolean         @default(false)
+  otpCode              String?
+  otpExpires           DateTime?
+  passwordResetToken   String?
+  passwordResetExpires DateTime?
+  
+  // Phone change OTP fields
+  phoneChangeOtp       String?
+  phoneChangeOtpExpires DateTime?
+  newPhoneNumber       String?
+  
+  // Admin fields
+  isAdmin              Boolean         @default(false)
+  adminLevel           AdminLevel      @default(USER)
+  adminPermissions     String?         // JSON string of permissions
+  twoFactorSecret      String?         // 2FA secret key
+  twoFactorEnabled     Boolean         @default(false)
+  lastAdminAction      DateTime?       // Track admin activity
+  isBanned             Boolean         @default(false)
+  banReason            String?
+  banExpires           DateTime?
+  banIssuedBy          String?         // Admin who issued the ban
+  userSettings         String?         // JSON field for basic settings
+  
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  
+  // Relations
+  sessions             Session[]
+  linkedTeams          LinkedTeam[]
+  leagueEntries        LeagueEntry[]
+  createdLeagues       League[]        @relation("CreatedLeagues")
+  transactions         Transaction[]
+  wallet               Wallet?
+  bonusWallet          BonusWallet?
+  payments             Payment[]
+  paymentMethods       PaymentMethod[]
+  withdrawals          Withdrawal[]
+  streakTracker        StreakTracker?
+  streakRewards        StreakReward[]
+  
+  // Admin relations
+  adminActions         AdminAction[]
+  issuedBans          UserBan[]       @relation("IssuedBans")
+  receivedBans        UserBan[]       @relation("ReceivedBans")
+}
+
+model Session {
+  id            String    @id @default(uuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token         String    @unique // JWT token
+  deviceInfo    String    // User agent string
+  ipAddress     String    // IP address
+  isActive      Boolean   @default(true)
+  rememberMe    Boolean   @default(false) // Extended session for "remember me"
+  lastActive    DateTime  @default(now())
+  expiresAt     DateTime  // Token expiry time
+  createdAt     DateTime  @default(now())
+  
+  @@index([userId, isActive])
+  @@index([token])
+}
+
+model LinkedTeam {
+  id            String        @id @default(uuid())
+  userId        String
+  fplTeamId     Int           @unique
+  teamName      String
+  isActive      Boolean       @default(true)
+  linkedAt      DateTime      @default(now())
+  lastSync      DateTime      @default(now())
+  leagueEntries LeagueEntry[]
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, fplTeamId])
+}
+
+model League {
+  id                   String        @id @default(uuid())
+  name                 String
+  type                 LeagueType
+  leagueFormat         LeagueFormat
+  creatorId            String
+  entryType            EntryType
+  entryFee             Float         @default(0)
+  maxTeams             Int           @default(400)
+  includeChipScores    Boolean       @default(false)
+  includeTransferCosts Boolean       @default(false)
+  season               Int
+  startGameweek        Int
+  endGameweek          Int?
+  startTime            DateTime?        // First match kickoff time for entry closure
+  knockoutRounds       Int?
+  prizeDistribution    String?
+  totalPrizePool       Float         @default(0)
+  platformFee          Float         @default(0)
+  platformFeeType      PlatformFeeType @default(PERCENTAGE)
+  platformFeeValue     Float         @default(5.0)
+  status               LeagueStatus  @default(DRAFT)
+  isPrivate            Boolean       @default(true)
+  isInvitational       Boolean       @default(true)
+  leagueCode           String        @unique
+  description          String?
+  
+  // Gameweek lifecycle fields
+  leagueState          String        @default("OPEN_FOR_ENTRY")
+  softFinalizedAt      DateTime?
+  finalizedAt          DateTime?
+  stabilityWindowMinutes Int         @default(60)
+  lastPointsCheck      DateTime?
+  pointsStabilityHash  String?
+  
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  h2hMatchups          H2HMatchup[]
+  creator              User          @relation("CreatedLeagues", fields: [creatorId], references: [id], onDelete: Cascade)
+  entries              LeagueEntry[]
+  transactions         Transaction[]
+
+  @@unique([name, creatorId, season])
+}
+
+model H2HMatchup {
+  id         String         @id @default(uuid())
+  leagueId   String
+  gameweek   Int
+  round      Int
+  team1Id    String?
+  team2Id    String?
+  team1Score Int?
+  team2Score Int?
+  winnerId   String?
+  status     H2HMatchStatus @default(SCHEDULED)
+  isBye      Boolean        @default(false)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  winner     LeagueEntry?   @relation("WonMatchups", fields: [winnerId], references: [id])
+  team2      LeagueEntry?   @relation("Team2Matchups", fields: [team2Id], references: [id])
+  team1      LeagueEntry?   @relation("Team1Matchups", fields: [team1Id], references: [id])
+  league     League         @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  @@unique([leagueId, gameweek, team1Id, team2Id])
+}
+
+model LeagueEntry {
+  id             String       @id @default(uuid())
+  leagueId       String
+  linkedTeamId   String
+  userId         String
+  entryTime      DateTime     @default(now())
+  totalPoints    Int          @default(0)
+  gameweekPoints Int          @default(0)
+  rank           Int?
+  previousRank   Int?
+  h2hWins        Int          @default(0)
+  h2hLosses      Int          @default(0)
+  h2hDraws       Int          @default(0)
+  isActive       Boolean      @default(true)
+  canLeave       Boolean      @default(false)
+  wonMatchups    H2HMatchup[] @relation("WonMatchups")
+  team2Matchups  H2HMatchup[] @relation("Team2Matchups")
+  team1Matchups  H2HMatchup[] @relation("Team1Matchups")
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  linkedTeam     LinkedTeam   @relation(fields: [linkedTeamId], references: [id], onDelete: Cascade)
+  league         League       @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  @@unique([leagueId, linkedTeamId])
+}
+
+model Transaction {
+  id            String            @id @default(uuid())
+  userId        String
+  leagueId      String?
+  type          TransactionType
+  amount        Float
+  status        TransactionStatus @default(PENDING)
+  reference     String            @unique
+  paymentMethod String?
+  description   String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  league        League?           @relation(fields: [leagueId], references: [id])
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Wallet {
+  id          String       @id @default(uuid())
+  userId      String       @unique
+  balance     Float        @default(0)
+  currency    String       @default("GHS")
+  isActive    Boolean      @default(true)
+  lastUpdated DateTime     @default(now())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  payments    Payment[]
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  withdrawals Withdrawal[]
+}
+
+model Payment {
+  id            String            @id @default(uuid())
+  walletId      String
+  userId        String
+  type          PaymentType
+  amount        Float
+  currency      String            @default("GHS")
+  status        PaymentStatus     @default(PENDING)
+  reference     String            @unique
+  paymentMethod String?
+  description   String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  wallet        Wallet            @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PaymentMethod {
+  id            String                    @id @default(uuid())
+  userId        String
+  type          StoredPaymentMethodType
+  provider      String?                   // Provider name (MTN, Vodafone, etc.)
+  accountNumber String?
+  accountName   String?
+  bankName      String?
+  mobileNumber  String?
+  isActive      Boolean                   @default(true)
+  isDefault     Boolean                   @default(false)
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+  user          User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Withdrawal {
+  id            String                @id @default(uuid())
+  userId        String
+  walletId      String
+  amount        Float
+  currency      String                @default("GHS")
+  status        WithdrawalStatus      @default(PENDING)
+  method        WithdrawalMethodType
+  accountNumber String?
+  accountName   String?
+  bankName      String?
+  mobileNumber  String?
+  reference     String                @unique
+  description   String?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  wallet        Wallet                @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  user          User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum LeagueType {
+  PAID
+  FREE
+}
+
+enum LeagueFormat {
+  CLASSIC
+  HEAD_TO_HEAD
+}
+
+enum EntryType {
+  FREE
+  PAID
+}
+
+enum LeagueStatus {
+  DRAFT
+  OPEN
+  LOCKED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum H2HMatchStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TransactionType {
+  ENTRY_FEE
+  PRIZE_WINNING
+  WITHDRAWAL
+  REFUND
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum PaymentType {
+  DEPOSIT
+  LEAGUE_ENTRY
+  LEAGUE_PRIZE
+  REFUND
+  ADMIN_ADJUSTMENT
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  EXPIRED
+}
+
+enum PaymentMethodType {
+  MTN_MOBILE_MONEY
+  VODAFONE_CASH
+  AIRTELTIGO_MONEY
+  BANK_TRANSFER
+  CREDIT_CARD
+  DEBIT_CARD
+  ADMIN_ADJUSTMENT
+}
+
+enum PlatformFeeType {
+  PERCENTAGE
+  FIXED
+}
+
+enum WithdrawalStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REJECTED
+}
+
+enum WithdrawalMethodType {
+  MTN_MOBILE_MONEY
+  VODAFONE_CASH
+  AIRTELTIGO_MONEY
+  BANK_TRANSFER
+}
+
+enum StoredPaymentMethodType {
+  MOBILE_MONEY
+  BANK_ACCOUNT
+  CARD
+}
+
+enum AdminLevel {
+  USER
+  MODERATOR
+  ADMIN
+  SUPER_ADMIN
+}
+
+// System Administration Models
+model SystemMaintenance {
+  id          String   @id @default(uuid())
+  isActive    Boolean  @default(false)
+  reason      String?
+  startTime   DateTime @default(now())
+  endTime     DateTime?
+  initiatedBy String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SystemHealth {
+  id          String   @id @default(uuid())
+  status      String   // "HEALTHY", "WARNING", "CRITICAL"
+  database    String   // Database connection status
+  api         String   // API response time
+  external    String   // External service status
+  timestamp   DateTime @default(now())
+  details     String?  // JSON string with detailed metrics
+}
+
+model AdminAction {
+  id          String   @id @default(uuid())
+  adminId     String
+  action      String   // "USER_BAN", "LEAGUE_SUSPEND", "BALANCE_ADJUST"
+  targetId    String?  // ID of the target (user, league, etc.)
+  targetType  String?  // "USER", "LEAGUE", "WITHDRAWAL"
+  details     String?  // JSON string with action details
+  ipAddress   String
+  userAgent   String
+  timestamp   DateTime @default(now())
+  
+  admin       User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+}
+
+model UserBan {
+  id          String   @id @default(uuid())
+  userId      String
+  adminId     String
+  reason      String
+  isPermanent Boolean  @default(false)
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  user        User     @relation("ReceivedBans", fields: [userId], references: [id], onDelete: Cascade)
+  admin       User     @relation("IssuedBans", fields: [adminId], references: [id], onDelete: Cascade)
+}
+
+model SystemLog {
+  id          String   @id @default(uuid())
+  level       String   // "INFO", "WARNING", "ERROR", "CRITICAL"
+  category    String   // "AUTH", "LEAGUE", "PAYMENT", "SYSTEM"
+  message     String
+  details     String?  // JSON string with additional context
+  ipAddress   String?
+  userId      String?
+  timestamp   DateTime @default(now())
+  
+  @@index([level, category, timestamp])
+}
+
+model DatabaseBackup {
+  id          String   @id @default(uuid())
+  filename    String
+  size        Int      // Size in bytes
+  status      String   // "PENDING", "COMPLETED", "FAILED"
+  backupType  String   // "FULL", "INCREMENTAL"
+  createdAt   DateTime @default(now())
+  completedAt DateTime?
+  error       String?
+}
+
+// Bonus Wallet System
+model BonusWallet {
+  id          String       @id @default(uuid())
+  userId      String       @unique
+  balance     Float        @default(0)
+  currency    String       @default("GHS")
+  isActive    Boolean      @default(true)
+  lastUpdated DateTime     @default(now())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions BonusTransaction[]
+}
+
+model BonusTransaction {
+  id            String            @id @default(uuid())
+  bonusWalletId String
+  userId        String
+  type          BonusTransactionType
+  amount        Float
+  currency      String            @default("GHS")
+  status        TransactionStatus @default(PENDING)
+  reference     String            @unique
+  description   String?
+  relatedLeagueId String?         // If related to league entry
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  bonusWallet   BonusWallet       @relation(fields: [bonusWalletId], references: [id], onDelete: Cascade)
+}
+
+// Streak Tracking System
+model StreakTracker {
+  id                    String   @id @default(uuid())
+  userId                String   @unique
+  currentStreak         Int      @default(0)
+  longestStreak         Int      @default(0)
+  lastParticipatedGameweek Int?  // Last gameweek user participated in
+  streakStartDate       DateTime? // When current streak started
+  totalParticipations   Int      @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model StreakReward {
+  id            String        @id @default(uuid())
+  userId        String
+  gameweek      Int           // Gameweek when reward was earned
+  streakLength  Int           // Streak length when reward was earned
+  amount        Float         // Reward amount (GHS 30)
+  currency      String        @default("GHS")
+  status        RewardStatus  @default(PENDING)
+  processedAt   DateTime?     // When reward was processed
+  createdAt     DateTime      @default(now())
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, gameweek]) // One reward per user per gameweek
+}
+
+enum BonusTransactionType {
+  STREAK_REWARD
+  PROMOTIONAL_CREDIT
+  LEAGUE_ENTRY
+  REFUND
+  ADMIN_ADJUSTMENT
+}
+
+enum RewardStatus {
+  PENDING
+  PROCESSED
+  FAILED
+}

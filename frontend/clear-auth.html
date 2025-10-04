@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear Authentication Data</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button.danger {
+            background: #dc3545;
+        }
+        button.danger:hover {
+            background: #c82333;
+        }
+        .code {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 3px;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Authentication Data Manager</h1>
+        
+        <div class="info">
+            <strong>Current Issue:</strong> Your frontend has an invalid/expired authentication token, causing 401 Unauthorized errors and timeouts.
+        </div>
+
+        <div class="warning">
+            <strong>Solution:</strong> Clear the invalid authentication data and log in again.
+        </div>
+
+        <h3>📊 Current Authentication Status</h3>
+        <div id="status"></div>
+
+        <h3>🛠️ Actions</h3>
+        <button onclick="checkAuthStatus()">Check Status</button>
+        <button onclick="clearAuthData()" class="danger">Clear Auth Data</button>
+        <button onclick="reloadPage()">Reload Page</button>
+
+        <h3>💡 Manual Solution (Browser Console)</h3>
+        <p>If the buttons don't work, open your browser's developer console (F12) and run:</p>
+        <div class="code">
+localStorage.removeItem('auth_token');<br>
+localStorage.removeItem('user');<br>
+localStorage.removeItem('auth_token_expiry');<br>
+window.location.reload();
+        </div>
+
+        <h3>🔍 Debug Information</h3>
+        <div id="debug"></div>
+    </div>
+
+    <script>
+        function checkAuthStatus() {
+            const token = localStorage.getItem('auth_token');
+            const user = localStorage.getItem('user');
+            const expiry = localStorage.getItem('auth_token_expiry');
+            
+            const statusDiv = document.getElementById('status');
+            const debugDiv = document.getElementById('debug');
+            
+            let status = '';
+            let debug = '';
+            
+            if (token) {
+                status += '<div class="warning">⚠️ Token found (length: ' + token.length + ')</div>';
+                debug += '<strong>Token:</strong> ' + token.substring(0, 50) + '...<br>';
+            } else {
+                status += '<div class="success">✅ No token found</div>';
+            }
+            
+            if (user) {
+                try {
+                    const userData = JSON.parse(user);
+                    status += '<div class="warning">⚠️ User data found (ID: ' + userData.id + ')</div>';
+                    debug += '<strong>User:</strong> ' + JSON.stringify(userData, null, 2) + '<br>';
+                } catch (e) {
+                    status += '<div class="warning">⚠️ Invalid user data found</div>';
+                }
+            } else {
+                status += '<div class="success">✅ No user data found</div>';
+            }
+            
+            if (expiry) {
+                status += '<div class="info">ℹ️ Token expiry: ' + expiry + '</div>';
+                debug += '<strong>Expiry:</strong> ' + expiry + '<br>';
+            }
+            
+            // Check for other auth-related items
+            const authKeys = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (key.includes('auth') || key.includes('token') || key.includes('user'))) {
+                    authKeys.push(key);
+                }
+            }
+            
+            if (authKeys.length > 0) {
+                debug += '<strong>Other auth keys:</strong> ' + authKeys.join(', ') + '<br>';
+            }
+            
+            statusDiv.innerHTML = status;
+            debugDiv.innerHTML = debug;
+        }
+
+        function clearAuthData() {
+            // Clear main auth items
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('auth_token_expiry');
+            
+            // Clear any other potential auth-related items
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (key.includes('auth') || key.includes('token') || key.includes('user'))) {
+                    keysToRemove.push(key);
+                }
+            }
+            keysToRemove.forEach(key => localStorage.removeItem(key));
+            
+            document.getElementById('status').innerHTML = '<div class="success">✅ Authentication data cleared successfully!</div>';
+            document.getElementById('debug').innerHTML = '<strong>Cleared keys:</strong> ' + keysToRemove.join(', ');
+            
+            console.log('🧹 Authentication data cleared');
+        }
+
+        function reloadPage() {
+            window.location.reload();
+        }
+
+        // Check status on page load
+        window.onload = function() {
+            checkAuthStatus();
+        };
+    </script>
+</body>
+</html>
