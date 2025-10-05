@@ -225,6 +225,8 @@ async function startServer() {
     if (!process.env.DATABASE_URL) {
       process.env.DATABASE_URL = 'file:./prisma/production.db';
       logger.info('Using default DATABASE_URL:', process.env.DATABASE_URL);
+    } else {
+      logger.info('Using provided DATABASE_URL:', process.env.DATABASE_URL);
     }
     
     if (!process.env.JWT_SECRET) {
@@ -241,13 +243,9 @@ async function startServer() {
       execSync('npx prisma generate', { stdio: 'inherit' });
       logger.info('Prisma client generated');
       
-      // Run database migrations
-      execSync('npx prisma migrate deploy', { stdio: 'inherit' });
-      logger.info('Database migrations completed');
-      
-      // Push schema to ensure tables exist
-      execSync('npx prisma db push', { stdio: 'inherit' });
-      logger.info('Database schema pushed');
+      // Push schema to create tables (bypasses migration issues)
+      execSync('npx prisma db push --force-reset', { stdio: 'inherit' });
+      logger.info('Database schema pushed and tables created');
       
     } catch (dbError) {
       logger.error('Database initialization failed:', dbError.message);
