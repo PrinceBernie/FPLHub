@@ -89,10 +89,11 @@ const corsOptions = {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    // Default allowed origins including mobile access
+    // Default allowed origins including mobile access and production frontend
     const defaultOrigins = [
       'http://localhost:3000', 
       'http://localhost:3001',
+      'https://phantaccihub.vercel.app',  // Production Vercel frontend
       'http://192.168.21.30:3000',  // Your local IP for mobile access
       'http://192.168.21.30:3001',  // Your local IP for mobile access
       'http://192.168.21.30:5000',  // Your local IP for mobile access
