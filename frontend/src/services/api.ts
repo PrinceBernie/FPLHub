@@ -14,7 +14,7 @@ const getApiBaseUrl = () => {
   // Check if we're in production (deployed)
   if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
     // Production: Use Railway backend URL
-    return 'https://your-app.railway.app/api'; // Replace with your actual Railway URL
+    return 'https://fplhub-production.up.railway.app/api';
   }
   
   // Check if we're accessing from a mobile device (IP address in URL)
