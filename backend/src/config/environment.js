@@ -5,6 +5,15 @@ const path = require('path');
 
 // Environment validation
 const validateEnvironment = () => {
+  // Set defaults if not provided
+  if (!process.env.DATABASE_URL) {
+    process.env.DATABASE_URL = 'file:./prisma/production.db';
+  }
+  
+  if (!process.env.JWT_SECRET) {
+    process.env.JWT_SECRET = 'your-super-secret-jwt-key-that-is-at-least-32-characters-long-for-production-use';
+  }
+  
   const required = [
     'JWT_SECRET',
     'DATABASE_URL'

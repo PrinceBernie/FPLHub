@@ -221,6 +221,35 @@ async function createServer() {
 // Connect to database and start server
 async function startServer() {
   try {
+    // Set default environment variables if not provided
+    if (!process.env.DATABASE_URL) {
+      process.env.DATABASE_URL = 'file:./prisma/production.db';
+      logger.info('Using default DATABASE_URL:', process.env.DATABASE_URL);
+    }
+    
+    if (!process.env.JWT_SECRET) {
+      process.env.JWT_SECRET = 'your-super-secret-jwt-key-that-is-at-least-32-characters-long-for-production-use';
+      logger.warn('Using default JWT_SECRET - please set a secure one in production');
+    }
+    
+    // Initialize database if needed
+    try {
+      logger.info('Initializing database...');
+      const { execSync } = require('child_process');
+      
+      // Generate Prisma client
+      execSync('npx prisma generate', { stdio: 'pipe' });
+      logger.info('Prisma client generated');
+      
+      // Run database migrations
+      execSync('npx prisma migrate deploy', { stdio: 'pipe' });
+      logger.info('Database migrations completed');
+      
+    } catch (dbError) {
+      logger.warn('Database initialization warning:', dbError.message);
+      // Continue anyway - the database might already exist
+    }
+    
     // Create server
     server = await createServer();
     
