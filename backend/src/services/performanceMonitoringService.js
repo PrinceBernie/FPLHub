@@ -2,10 +2,10 @@
 // Performance monitoring and metrics collection service
 
 const { PrismaClient } = require('@prisma/client');
-const optimizedFplService = require('./optimizedFplService');
-const optimizedLiveStandingsService = require('./optimizedLiveStandingsService');
-const optimizedLiveScoringService = require('./optimizedLiveScoringService');
-const optimizedSocketService = require('./optimizedSocketService');
+// const optimizedFplService = require('./optimizedFplService');
+// const optimizedLiveStandingsService = require('./optimizedLiveStandingsService');
+// const optimizedLiveScoringService = require('./optimizedLiveScoringService');
+// const optimizedSocketService = require('./optimizedSocketService');
 
 const prisma = new PrismaClient();
 
@@ -88,10 +88,14 @@ class PerformanceMonitoringService {
     try {
       // Collect metrics from all services
       const metrics = {
-        fplService: optimizedFplService.getMetrics(),
-        liveStandings: optimizedLiveStandingsService.getPerformanceMetrics(),
-        liveScoring: optimizedLiveScoringService.getMetrics(),
-        socketService: optimizedSocketService.getMetrics()
+        // fplService: optimizedFplService.getMetrics(),
+        // liveStandings: optimizedLiveStandingsService.getPerformanceMetrics(),
+        // liveScoring: optimizedLiveScoringService.getMetrics(),
+        // socketService: optimizedSocketService.getMetrics()
+        fplService: { status: 'disabled' },
+        liveStandings: { status: 'disabled' },
+        liveScoring: { status: 'disabled' },
+        socketService: { status: 'disabled' }
       };
 
       // Store metrics in database
@@ -451,10 +455,14 @@ class PerformanceMonitoringService {
       isRunning: this.isRunning,
       uptime: Date.now() - (this.startTime || Date.now()),
       services: {
-        fplService: optimizedFplService.getMetrics(),
-        liveStandings: optimizedLiveStandingsService.getPerformanceMetrics(),
-        liveScoring: optimizedLiveScoringService.getMetrics(),
-        socketService: optimizedSocketService.getConnectionStats()
+        // fplService: optimizedFplService.getMetrics(),
+        // liveStandings: optimizedLiveStandingsService.getPerformanceMetrics(),
+        // liveScoring: optimizedLiveScoringService.getMetrics(),
+        // socketService: optimizedSocketService.getConnectionStats()
+        fplService: { status: 'disabled' },
+        liveStandings: { status: 'disabled' },
+        liveScoring: { status: 'disabled' },
+        socketService: { status: 'disabled' }
       }
     };
   }

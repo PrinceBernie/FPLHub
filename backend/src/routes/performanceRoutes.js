@@ -4,10 +4,10 @@
 const express = require('express');
 const router = express.Router();
 const performanceMonitoringService = require('../services/performanceMonitoringService');
-const optimizedFplService = require('../services/optimizedFplService');
-const optimizedLiveStandingsService = require('../services/optimizedLiveStandingsService');
-const optimizedLiveScoringService = require('../services/optimizedLiveScoringService');
-const optimizedSocketService = require('../services/optimizedSocketService');
+// const optimizedFplService = require('../services/optimizedFplService');
+// const optimizedLiveStandingsService = require('../services/optimizedLiveStandingsService');
+// const optimizedLiveScoringService = require('../services/optimizedLiveScoringService');
+// const optimizedSocketService = require('../services/optimizedSocketService');
 
 // Middleware to check admin permissions
 const requireAdmin = (req, res, next) => {
@@ -121,7 +121,8 @@ router.get('/league/:leagueId', requireAdmin, async (req, res) => {
  */
 router.get('/fpl-service', requireAdmin, async (req, res) => {
   try {
-    const metrics = optimizedFplService.getMetrics();
+    // const metrics = optimizedFplService.getMetrics();
+    const metrics = { status: 'disabled' };
     
     res.json({
       success: true,
@@ -147,9 +148,10 @@ router.get('/fpl-service', requireAdmin, async (req, res) => {
 router.get('/live-standings', requireAdmin, async (req, res) => {
   try {
     const leagueId = req.query.leagueId;
-    const metrics = leagueId 
-      ? optimizedLiveStandingsService.getPerformanceMetrics(leagueId)
-      : optimizedLiveStandingsService.getPerformanceMetrics();
+    // const metrics = leagueId 
+    //   ? optimizedLiveStandingsService.getPerformanceMetrics(leagueId)
+    //   : optimizedLiveStandingsService.getPerformanceMetrics();
+    const metrics = { status: 'disabled' };
     
     res.json({
       success: true,
@@ -175,8 +177,10 @@ router.get('/live-standings', requireAdmin, async (req, res) => {
  */
 router.get('/live-scoring', requireAdmin, async (req, res) => {
   try {
-    const metrics = optimizedLiveScoringService.getMetrics();
-    const status = optimizedLiveScoringService.getStatus();
+    // const metrics = optimizedLiveScoringService.getMetrics();
+    // const status = optimizedLiveScoringService.getStatus();
+    const metrics = { status: 'disabled' };
+    const status = { status: 'disabled' };
     
     res.json({
       success: true,
@@ -202,8 +206,10 @@ router.get('/live-scoring', requireAdmin, async (req, res) => {
  */
 router.get('/socket-service', requireAdmin, async (req, res) => {
   try {
-    const metrics = optimizedSocketService.getMetrics();
-    const stats = optimizedSocketService.getConnectionStats();
+    // const metrics = optimizedSocketService.getMetrics();
+    // const stats = optimizedSocketService.getConnectionStats();
+    const metrics = { status: 'disabled' };
+    const stats = { status: 'disabled' };
     
     res.json({
       success: true,
@@ -230,9 +236,9 @@ router.get('/socket-service', requireAdmin, async (req, res) => {
 router.post('/reset-metrics', requireAdmin, async (req, res) => {
   try {
     // Reset metrics for all services
-    optimizedFplService.resetMetrics();
-    optimizedLiveScoringService.resetMetrics();
-    optimizedSocketService.resetMetrics();
+    // optimizedFplService.resetMetrics();
+    // optimizedLiveScoringService.resetMetrics();
+    // optimizedSocketService.resetMetrics();
     
     res.json({
       success: true,
