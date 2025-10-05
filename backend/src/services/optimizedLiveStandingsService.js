@@ -2,7 +2,7 @@
 // Ultra-optimized live standings service with bulk operations, concurrency control, and incremental updates
 
 const { PrismaClient } = require('@prisma/client');
-const pLimit = require('p-limit').default;
+const pLimit = require('p-limit');
 const optimizedFplService = require('./optimizedFplService');
 const socketService = require('./socketService');
 

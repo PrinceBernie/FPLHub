@@ -2,7 +2,7 @@
 // Centralized FPL service with advanced caching, concurrency control, and performance optimization
 
 const axios = require('axios');
-const pLimit = require('p-limit').default;
+const pLimit = require('p-limit');
 const Redis = require('ioredis');
 
 class OptimizedFPLService {
