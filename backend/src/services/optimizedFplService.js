@@ -2,7 +2,30 @@
 // Centralized FPL service with advanced caching, concurrency control, and performance optimization
 
 const axios = require('axios');
-const pLimit = require('p-limit');
+// Simple concurrency limiter to replace p-limit
+const createConcurrencyLimiter = (limit) => {
+  let running = 0;
+  const queue = [];
+  
+  return async (fn) => {
+    return new Promise((resolve, reject) => {
+      queue.push({ fn, resolve, reject });
+      process();
+    });
+  };
+  
+  function process() {
+    if (running >= limit || queue.length === 0) return;
+    running++;
+    const { fn, resolve, reject } = queue.shift();
+    fn().then(resolve).catch(reject).finally(() => {
+      running--;
+      process();
+    });
+  }
+};
+
+const pLimit = createConcurrencyLimiter(5);
 const Redis = require('ioredis');
 
 class OptimizedFPLService {
