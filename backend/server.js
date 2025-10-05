@@ -39,9 +39,9 @@ const { prisma } = require('./src/services/databaseService');
 
 // Import services
 const socketService = require('./src/services/socketService');
-const optimizedSocketService = require('./src/services/optimizedSocketService');
-const optimizedSchedulerService = require('./src/services/optimizedSchedulerService');
-const performanceMonitoringService = require('./src/services/performanceMonitoringService');
+// const optimizedSocketService = require('./src/services/optimizedSocketService');
+// const optimizedSchedulerService = require('./src/services/optimizedSchedulerService');
+// const performanceMonitoringService = require('./src/services/performanceMonitoringService');
 // Legacy services (can be removed after migration)
 // const liveScoringService = require('./src/services/liveScoringService');
 const liveStandingsScheduler = require('./src/services/liveStandingsScheduler');
@@ -233,12 +233,12 @@ async function startServer() {
     
     // Initialize Socket.io (both legacy and optimized)
     socketService.initialize(server);
-    optimizedSocketService.initialize(server);
+    // optimizedSocketService.initialize(server);
     logger.info('Socket.io servers initialized');
     
     // Start optimized scheduler service
-    await optimizedSchedulerService.start();
-    logger.info('Optimized scheduler service started');
+    // await optimizedSchedulerService.start();
+    // logger.info('Optimized scheduler service started');
     
     // Start legacy services (can be removed after migration)
     // await liveScoringService.start();
