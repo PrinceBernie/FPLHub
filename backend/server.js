@@ -39,9 +39,6 @@ const { prisma } = require('./src/services/databaseService');
 
 // Import services
 const socketService = require('./src/services/socketService');
-// const optimizedSocketService = require('./src/services/optimizedSocketService');
-// const optimizedSchedulerService = require('./src/services/optimizedSchedulerService');
-// const performanceMonitoringService = require('./src/services/performanceMonitoringService');
 // Legacy services (can be removed after migration)
 // const liveScoringService = require('./src/services/liveScoringService');
 const liveStandingsScheduler = require('./src/services/liveStandingsScheduler');
@@ -231,14 +228,9 @@ async function startServer() {
     await prisma.$connect();
     logger.info('Database connected successfully');
     
-    // Initialize Socket.io (both legacy and optimized)
+    // Initialize Socket.io
     socketService.initialize(server);
-    // optimizedSocketService.initialize(server);
-    logger.info('Socket.io servers initialized');
-    
-    // Start optimized scheduler service
-    // await optimizedSchedulerService.start();
-    // logger.info('Optimized scheduler service started');
+    logger.info('Socket.io server initialized');
     
     // Start legacy services (can be removed after migration)
     // await liveScoringService.start();
@@ -296,11 +288,6 @@ startServer();
 // Graceful shutdown
 process.on('SIGINT', async () => {
   console.log('\n🛑 Shutting down server gracefully...');
-  
-  // Stop optimized services
-  await optimizedSchedulerService.stop();
-  await optimizedSocketService.shutdown();
-  await performanceMonitoringService.stop();
   
   // Stop legacy services
   liveStandingsScheduler.stop();
