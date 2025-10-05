@@ -238,15 +238,20 @@ async function startServer() {
       const { execSync } = require('child_process');
       
       // Generate Prisma client
-      execSync('npx prisma generate', { stdio: 'pipe' });
+      execSync('npx prisma generate', { stdio: 'inherit' });
       logger.info('Prisma client generated');
       
       // Run database migrations
-      execSync('npx prisma migrate deploy', { stdio: 'pipe' });
+      execSync('npx prisma migrate deploy', { stdio: 'inherit' });
       logger.info('Database migrations completed');
       
+      // Push schema to ensure tables exist
+      execSync('npx prisma db push', { stdio: 'inherit' });
+      logger.info('Database schema pushed');
+      
     } catch (dbError) {
-      logger.warn('Database initialization warning:', dbError.message);
+      logger.error('Database initialization failed:', dbError.message);
+      logger.error('Full error:', dbError);
       // Continue anyway - the database might already exist
     }
     
@@ -264,8 +269,8 @@ async function startServer() {
     // Start legacy services (can be removed after migration)
     // await liveScoringService.start();
     // logger.info('Live scoring service started');
-    liveStandingsScheduler.start(); // ENABLED - fallback for live standings updates
-    logger.info('Legacy live standings scheduler started');
+    // liveStandingsScheduler.start(); // DISABLED - until database tables are created
+    // logger.info('Legacy live standings scheduler started');
     
     // Start server
     server.listen(PORT, HOST, () => {
@@ -319,8 +324,8 @@ process.on('SIGINT', async () => {
   console.log('\n🛑 Shutting down server gracefully...');
   
   // Stop legacy services
-  liveStandingsScheduler.stop();
-  console.log('✅ Live standings scheduler stopped');
+  // liveStandingsScheduler.stop();
+  // console.log('✅ Live standings scheduler stopped');
   
   // Disconnect from database
   await prisma.$disconnect();
