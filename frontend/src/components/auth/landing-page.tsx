@@ -41,29 +41,6 @@ const LandingPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Navigation */}
-      <nav className="border-b border-border">
-        <div className="container-clean">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <PhantacciLogo className="w-20 h-20" />
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link to="/auth">
-                <Button className="border border-border bg-transparent hover:bg-accent hover:text-accent-foreground">
-                  Sign In
-                </Button>
-              </Link>
-              <Link to="/auth">
-                <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
-                  Get Started
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
-
       {/* Hero Section */}
       <section className="py-20 lg:py-32 relative overflow-hidden">
         {/* Background Image with Overlay */}
@@ -83,27 +60,41 @@ const LandingPage: React.FC = () => {
 
         {/* Content */}
         <div className="container-clean text-center relative z-10">
-          <h1 className="text-4xl lg:text-6xl font-bold mb-6">
-            Your Ultimate
-            <span className="text-gradient block mt-2">
-              Fantasy Football Hub
-            </span>
-          </h1>
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Create leagues, track performance, and compete with
-            friends in the most comprehensive fantasy football
-            platform.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          {/* Logo and Brand */}
+          <div className="animate-fade-in mb-8">
+            <div className="mx-auto w-fit text-left">
+              <PhantacciLogo size="xl" variant="default" className="mx-0" />
+            </div>
+          </div>
+          
+          {/* Hero Title */}
+          <div className="animate-fade-in">
+            <h1 className="text-4xl lg:text-6xl font-bold mb-6">
+              Your Ultimate
+              <span className="text-gradient block mt-2">
+                Fantasy Football Hub
+              </span>
+            </h1>
+            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+              Create leagues, track performance, and compete with
+              friends in the most comprehensive fantasy football
+              platform.
+            </p>
+          </div>
+          
+          {/* Action Buttons */}
+          <div className="animate-fade-in flex flex-row flex-wrap gap-4 justify-center items-center">
             <Link to="/auth">
               <Button className="h-9 px-8 text-base bg-primary text-primary-foreground hover:bg-primary/90">
-                Start Playing
+                Sign In
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
-            <Button className="h-9 px-8 text-base border border-border bg-transparent hover:bg-accent hover:text-accent-foreground">
-              Learn More
-            </Button>
+            <Link to="/auth">
+              <Button className="h-9 px-8 text-base border border-border bg-transparent hover:bg-accent hover:text-accent-foreground">
+                Get Started
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -167,51 +158,15 @@ const LandingPage: React.FC = () => {
       {/* Footer */}
       <footer className="border-t border-border py-12">
         <div className="container-clean">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 gap-8">
             <div>
-              <PhantacciLogo size="lg" variant="vertical" />
-              <p className="text-sm text-muted-foreground mt-4">
-                The ultimate fantasy football hub for
-                competitive players.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-medium mb-4">Product</h4>
+              <h4 className="font-medium mb-4">Explore</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
-                  <a href="#" className="hover:text-foreground">
-                    Features
-                  </a>
+                  <a href="#" className="hover:text-foreground">Features</a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-foreground">
-                    Pricing
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-foreground">
-                    Updates
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-medium mb-4">Support</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>
-                  <a href="#" className="hover:text-foreground">
-                    Help Center
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-foreground">
-                    Contact
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-foreground">
-                    Status
-                  </a>
+                  <a href="#" className="hover:text-foreground">Contact</a>
                 </li>
               </ul>
             </div>
@@ -219,19 +174,16 @@ const LandingPage: React.FC = () => {
               <h4 className="font-medium mb-4">Legal</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
-                  <a href="#" className="hover:text-foreground">
-                    Privacy
-                  </a>
+                  <a href="#" className="hover:text-foreground">Privacy</a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-foreground">
-                    Terms
-                  </a>
+                  <a href="#" className="hover:text-foreground">Terms</a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-foreground">
-                    License
-                  </a>
+                  <a href="#" className="hover:text-foreground">License</a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-foreground">Terms & Conditions</a>
                 </li>
               </ul>
             </div>
@@ -246,3 +198,4 @@ const LandingPage: React.FC = () => {
 };
 
 export default LandingPage;
+

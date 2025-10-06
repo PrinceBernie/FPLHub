@@ -1,13 +1,22 @@
 // File: fpl-hub-backend/src/services/performanceMonitoringService.js
 // Performance monitoring and metrics collection service
 
-const { PrismaClient } = require('@prisma/client');
+// Reuse the shared Prisma instance to avoid multiple clients and ensure
+// consistent configuration (DATABASE_URL, logging, etc.) across the app.
+const { prisma } = require('./databaseService');
 // const optimizedFplService = require('./optimizedFplService');
 // const optimizedLiveStandingsService = require('./optimizedLiveStandingsService');
 // const optimizedLiveScoringService = require('./optimizedLiveScoringService');
 // const optimizedSocketService = require('./optimizedSocketService');
 
-const prisma = new PrismaClient();
+// Small helper to detect if the PerformanceMetrics model exists on the client
+function hasPerformanceMetricsModel() {
+  try {
+    return Boolean(prisma && prisma.performanceMetrics && typeof prisma.performanceMetrics.create === 'function');
+  } catch (_) {
+    return false;
+  }
+}
 
 class PerformanceMonitoringService {
   constructor() {
@@ -15,6 +24,7 @@ class PerformanceMonitoringService {
     this.monitoringInterval = null;
     this.metricsCollectionInterval = 5 * 60 * 1000; // 5 minutes
     this.cleanupInterval = 24 * 60 * 60 * 1000; // 24 hours
+    this.metricsSupported = hasPerformanceMetricsModel();
     
     // Performance thresholds
     this.thresholds = {
@@ -25,14 +35,21 @@ class PerformanceMonitoringService {
       errorRate: 5 // 5%
     };
 
-    // Start monitoring
-    this.start();
+    // Start monitoring only if metrics are supported; otherwise, stay disabled
+    if (this.metricsSupported) {
+      this.start();
+    } else {
+      console.warn('PerformanceMonitoringService: PerformanceMetrics model not found. Monitoring disabled.');
+    }
   }
 
   /**
    * Start performance monitoring
    */
   start() {
+    if (!this.metricsSupported) {
+      return; // no-op if model unsupported
+    }
     if (this.isRunning) {
       console.log('⚠️ Performance monitoring is already running');
       return;
@@ -70,6 +87,9 @@ class PerformanceMonitoringService {
    * Start metrics collection
    */
   startMetricsCollection() {
+    if (!this.metricsSupported) {
+      return; // no-op
+    }
     this.monitoringInterval = setInterval(async () => {
       try {
         await this.collectAndStoreMetrics();
@@ -83,6 +103,9 @@ class PerformanceMonitoringService {
    * Collect and store performance metrics
    */
   async collectAndStoreMetrics() {
+    if (!this.metricsSupported) {
+      return; // no-op
+    }
     const timestamp = new Date();
     
     try {
@@ -114,6 +137,9 @@ class PerformanceMonitoringService {
    * Store performance metrics in database
    */
   async storeMetrics(serviceName, leagueId, metricData, timestamp) {
+    if (!this.metricsSupported) {
+      return; // no-op
+    }
     try {
       await prisma.performanceMetrics.create({
         data: {
@@ -196,6 +222,9 @@ class PerformanceMonitoringService {
    * Store performance alerts
    */
   async storeAlerts(alerts) {
+    if (!this.metricsSupported) {
+      return; // no-op
+    }
     try {
       await prisma.performanceMetrics.create({
         data: {
@@ -215,6 +244,9 @@ class PerformanceMonitoringService {
    * Get performance metrics for a specific service
    */
   async getServiceMetrics(serviceName, hours = 24) {
+    if (!this.metricsSupported) {
+      return [];
+    }
     try {
       const since = new Date(Date.now() - (hours * 60 * 60 * 1000));
       
@@ -246,6 +278,9 @@ class PerformanceMonitoringService {
    * Get league-specific performance metrics
    */
   async getLeagueMetrics(leagueId, hours = 24) {
+    if (!this.metricsSupported) {
+      return [];
+    }
     try {
       const since = new Date(Date.now() - (hours * 60 * 60 * 1000));
       
@@ -277,6 +312,12 @@ class PerformanceMonitoringService {
    * Get performance summary
    */
   async getPerformanceSummary(hours = 24) {
+    if (!this.metricsSupported) {
+      return {
+        status: 'disabled',
+        message: 'Performance metrics disabled (model not found)'
+      };
+    }
     try {
       const since = new Date(Date.now() - (hours * 60 * 60 * 1000));
       
